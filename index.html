@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<abbrabbr charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+</title>
+
+<style>
+/* --- RESET & BASIC SETUP --- */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins', sans-serif;}
+html,body{width:100%;height:100%;}
+body{color:white;margin:0;overflow-y:auto;touch-action: pan-y; background: #050505;}
+
+.video-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:#000;}
+canvas{width:100%;height:100%;}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at center, rgba(0, 255, 204, 0.05) 0%, rgba(0,0,0,0.95) 100%);z-index:-1;}
+
+/* --- PAGE STRUCTURE --- */
+.page{display:none;flex-direction:column;align-items:center;text-align:center;padding:40px 15px;min-height:100vh;position:relative; animation: fadeIn 0.5s ease-in-out; padding-bottom: 80px;}
+.active{display:flex;}
+
+@keyframes fadeIn { from{opacity:0; transform: translateY(20px);} to{opacity:1; transform: translateY(0);} }
+
+/* --- TYPOGRAPHY --- */
+h1{font-family: 'Rajdhani', sans-serif; font-size:55px; font-weight: 700;
+   background: linear-gradient(to right, #00ffcc, #00aaff); -webkit-background-clip: text; color: transparent;
+   text-shadow:0 0 30px rgba(0, 255, 204, 0.2); margin-bottom:5px; text-transform: uppercase;}
+hh2{font-size:16px; margin-bottom:25px; color: #888; font-weight: 300; letter-spacing: 1px;}
+
+/* --- GLASS COMPONENTS --- */
+.glass-box {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* --- LOGIN MODAL --- */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center;
+    backdrop-filter: blur(8px);
+}
+.modal-box {
+    width: 85%; padding: 25px; background: #0a0a0a; border: 1px solid #00ffcc;
+    border-radius: 20px; text-align: center; position: relative;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+}
+.modal-input {
+    width: 100%; padding: 12px; margin: 15px 0; background: #1a1a1a; border: 1px solid #333;
+    color: white; border-radius: 8px; font-size: 16px; outline: none; text-align: center;
+    font-family: 'Rajdhani', sans-serif; letter-spacing: 2px;
+}
+.modal-input:focus { border-color: #00ffcc; }
+.modal-btn {
+    width: 100%; padding: 12px; bacbackgroundkground: linear-gradient(90deg, #00ffcc, #00aaff);
+    border: none; borbackground: 8px; color: black; font-weight: bold; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 1px;
+}
+.close-modal {
+    position: absolute; top: 10px; right: 15px; font-size: 24px; color: #aaa; cursor: pointer;
+}
+
+/* --- PAGE 1: LOGIN --- */
+.welcome-text { font-size: 14px; color: #aaa; margin-bottom: 40px; line-height: 1.6; max-width: 90%; }
+.start-wrap{display:flex; width:100%; gap:15px; justify-content: center;}
+.start-btn{
+    flex:1; height:110px; border-radius:24px; border:none; color:white;
+    font-size:18px; font-weight:bold; cursor:pointer;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    transition: transform 0.2s; position: relative; overflow: hidden;
+}
+.start-btn:active { transform: scale(0.96); }
+.btn-wa { background: linear-gradient(135deg, #1f2f2f 0%, #0d1a1a 100%); border: 1px solid #25D366; box-shadow: 0 0 15px rgba(37, 211, 102, 0.1); }
+.btn-tg { background: linear-gradient(135deg, #1a252f 0%, #0d141a 100%); border: 1px solid #29B6F6; box-shadow: 0 0 15px rgba(41, 182, 246, 0.1); }
+.start-btn img { margin-bottom: 8px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+.start-btn span { font-family: 'Rajdhani', sans-serif; font-size: 20px; }
+.start-btn small { font-size: 10px; opacity: 0.6; font-weight: normal; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+/* --- PAGE 2: DASHBOARD (UPDATED) --- */
+.dashboard-header { width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+.wallet-card {
+    width: 100%; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
+    border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 20px;
+    position: relative; overflow: hidden;
+}
+.wallet-card::before {
+    content:''; position: absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background: radial-gradient(circle, rgba(0,255,204,0.05), transparent 60%);
+    animation: rotate 10s linear infinite;
+}
+@keyframes rotate { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+.wallet-title { font-size: 12px; color: #00ffcc; text-transform: uppercase; letter-spacing: 2px; z-index: 1;}
+.wallet-amount { font-family: 'Rajdhani', sans-serif; font-size: 42px; font-weight: 700; color: white; margin: 5px 0; z-index: 1; text-shadow: 0 0 10px rgba(0,255,204,0.3);}
+
+/* Action Grid */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 20px; }
+.action-btn {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 12px 5px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; color: #ddd; cursor: pointer;
+    transition: 0.3s;
+}
+.action-btn:hover { background: rgba(0, 255, 204, 0.05); border-color: #00ffcc; color: #00ffcc; }
+.action-icon { font-size: 18px; }
+.action-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* --- TECH PANELS (NEW DESIGNS) --- */
+.tech-panel {
+    width: 100%; background: #0b0b0b; border: 1px solid #1a1a1a;
+    border-radius: 16px; padding: 15px; margin-bottom: 15px;
+    position: relative; overflow: hidden;
+}
+.panel-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+}
+.panel-header span:first-child {
+    font-family: 'Rajdhani'; font-weight: 700; color: #fff; font-size: 14px; display: flex; align-items: center; gap: 6px;
+}
+.live-badge {
+    background: rgba(0, 255, 204, 0.1); color: #00ffcc; padding: 2px 6px; border-radius: 4px;
+    font-size: 9px; font-weight: bold; border: 1px solid rgba(0, 255, 204, 0.2);
+    animation: pulseGlow 2s infinite;
+}
+@keyframes pulseGlow { 0%{box-shadow: 0 0 0 0 rgba(0,255,204,0.4);} 70%{box-shadow: 0 0 0 5px rgba(0,255,204,0);} 100%{box-shadow: 0 0 0 0 rgba(0,255,204,0);} }
+
+/* 1. Mining Graph Panel */
+.graph-container {
+    width: 100%; height: 80px; position: relative;
+    border-bottom: 1px solid #1a1a1a; margin-bottom: 8px;
+}
+#miningCanvas { width: 100%; height: 100%; }
+.panel-footer { display: flex; justify-content: space-between; font-size: 11px; color: #666; font-family: 'Rajdhani'; }
+
+/* 2. Network Visual Panel */
+.network-container {
+    width: 100%; height: 120px; background: radial-gradient(circle, #111 0%, #000 100%);
+    border-radius: 8px; position: relative; border: 1px dashed #222; overflow: hidden;
+}
+#networkCanvas { width: 100%; height: 100%; }
+.network-stats {
+    display: flex; justify-content: space-between; margin-top: 10px; padding: 0 5px;
+}
+.network-stats div { text-align: left; }
+.network-stats .label { font-size: 9px; color: #555; display: block; margin-bottom: 2px; }
+.network-stats .val { font-family: 'Rajdhani'; font-size: 14px; color: #00aaff; font-weight: bold; }
+
+/* 3. Mining Rigs Area */
+.mining-rigs-area {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 20px;
+}
+.rig-card {
+    background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 12px; padding: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+}
+.rig-icon { font-size: 20px; filter: drop-shadow(0 0 5px rgba(0,255,204,0.5)); animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-3px);} }
+.rig-status { font-size: 9px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; }
+.rig-card:nth-child(2) .rig-status { color: #00aaff; }
+.rig-card:nth-child(2) .rig-icon { filter: drop-shadow(0 0 5px rgba(0,170,255,0.5)); }
+.rig-card:nth-child(3) .rig-status { color: #ff00cc; }
+.rig-card:nth-child(3) .rig-icon { filter: drop-shadow(0 0 5px rgba(255,0,204,0.5)); }
+
+/* Refer Button */
+.refer-btn-main {
+    margin-top: auto; width: 100%; padding: 16px; border: none; border-radius: 12px;
+    background: #111; border: 1px solid #333;
+    font-size: 14px; font-weight: bold; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    position: relative; overflow: hidden; transition: 0.3s;
+}
+.refer-btn-main::after {
+    content:''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, #ff00cc, #333399);
+}
+.refer-btn-main:hover { background: #161616; }
+
+
+/* --- PAGE 6: REFERRAL LEVELS --- */
+.ref-header { background: linear-gradient(to bottom, #1a1a1a, transparent); width: 100%; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 20px; }
+.level-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.level-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 15px; border-radius: 10px;
+    background: #0f0f0f; border: 1px solid #1a1a1a;
+    position: relative; overflow: hidden;
+}
+.level-card::after { content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.lv-1::after { background: #FFD700; } 
+.lv-2::after { background: #C0C0C0; } 
+.lv-3::after { background: #CD7F32; } 
+.lv-4::after { background: #00ffcc; } 
+.lv-5::after { background: #00aaff; } 
+.lv-6::after { background: #ff00cc; }
+.lv-info h3 { font-size: 14px; font-weight: 600; margin-bottom: 1px; font-family: 'Rajdhani'; }
+.lv-info span { font-size: 11px; color: #555; }
+.lv-percent { font-family: 'Rajdhani'; font-size: 18px; font-weight: bold; }
+
+/* --- OTHER PAGES (Packages, Payment etc) --- */
+.pkg-grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
+.pkg-card {
+    position: relative; padding: 20px; border-radius: 16px;
+    background: #0f0f0f; border: 1px solid #1a1a1a; overflow: hidden;
+}
+.pkg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.pkg-price { font-family: 'Rajdhani'; font-size: 28px; font-weight: bold; color: #00ffcc; }
+.pkg-details { display: flex; justify-content: space-between; margin-bottom: 15px; background: #161616; padding: 10px; border-radius: 8px; }
+.detail-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #777; }
+.detail-val { font-size: 14px; color: white; font-weight: bold; margin-top: 2px; }
+.pkg-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #00ffcc; color: black; font-weight: bold; cursor: pointer; }
+
+/* --- NAVIGATION --- */
+.back-btn{
+    position:absolute; top:15px; left:15px; background:rgba(255,255,255,0.05); width: 35px; height: 35px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1); font-size: 16px; color:white; cursor:pointer; z-index: 10;
+}
+
+/* Pay Options */
+.pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin: 20px 0; }
+.pay-option {
+    height: 90px; border-radius: 12px; border: 1px solid #222;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: #0f0f0f; cursor: pointer; transition: 0.3s;
+}
+.pay-option.selected { border-color: #00ffcc; background: #161616; }
+
+</style>
+</head>
+
+<body>
+
+<div class="video-bg"><canvas id="bg"></canvas></div>
+<div class="overlay"></div>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="modal-overlay">
+    <div class="modal-box">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h2 style="color:#00ffcc; margin-bottom:5px; font-family:'Rajdhani'; letter-spacing:2px;">SECURE LOGIN</h2>
+        <p style="font-size:11px; color:#555;">AUTHENTICATION REQUIRED</p>
+        <input type="number" id="loginNumber" class="modal-input" placeholder="01XXXXXXXXX">
+        <button class="modal-btn" onclick="validateLogin()">ACCESS SYSTEM</button>
+        <div id="errorMsg" style="color:#ff3333; font-size:11px; margin-top:10px; display:none;">INVALID NUMBER FORMAT</div>
+    </div>
+</div>
+
+<!-- PAGE 1: LOGIN -->
+<div id="page1" class="page active">
+    <h1>ZBEN</h1>
+    <h2>NEXT GEN BLOCKCHAIN</h2>
+
+    <p class="welcome-text">
+        Decentralized wealth management system.<br>Connect your network to start mining.
+    </p>
+
+    <div class="start-wrap">
+        <button class="start-btn btn-wa" onclick="openLogin()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:30px;height:30px;">
+            <span>WHATSAPP</span>
+            <small>Connect</small>
+        </button>
+
+        <button class="start-btn btn-tg" onclick="openLogin()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" style="width:30px;height:30px;">
+            <span>TELEGRAM</span>
+            <small>Connect</small>
+        </button>
+    </div>
+</div>
+
+<!-- PAGE 2: DASHBOARD -->
+<div id="page2" class="page">
+    <button class="back-btn" onclick="show('page1')">←</button>
+    <h1 style="font-size:32px; margin-bottom:20px;">COMMAND CENTER</h1>
+    
+    <!-- Balance -->
+    <div class="dashboard-header">
+        <div class="wallet-card">
+            <span class="wallet-title">AVAILABLE ASSETS</span>
+            <span class="wallet-amount">0.00 ৳</span>
+        </div>
+        
+        <!-- Action Grid -->
+        <div class="action-grid">
+            <div class="action-btn" onclick="goPage3()">
+                <div class="action-icon">📦</div>
+                <div class="action-label">Plans</div>
+            </div>
+            <div class="action-btn" onclick="goWithdraw()">
+                <div class="action-icon">💸</div>
+                <div class="action-label">Cashout</div>
+            </div>
+            <div class="action-btn" onclick="openSupport()">
+                <div class="action-icon">🛠️</div>
+                <div class="action-label">Help</div>
+            </div>
+            <div class="action-btn" onclick="goHistory()">
+                <div class="action-icon">📜</div>
+                <div class="action-label">History</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. LIVE GRAPH SECTION -->
+    <div class="tech-panel">
+        <div class="panel-header">
+            <span>📊 MARKET TREND</span>
+            <span class="live-badge">LIVE</span>
+        </div>
+        <div class="graph-container">
+            <canvas id="miningCanvas"></canvas>
+        </div>
+        <div class="panel-footer">
+             <span>BTC/USDT</span>
+             <span style="color:#00ffcc">+2.45%</span>
+        </div>
+    </div>
+
+    <!-- 2. NETWORK TOPOLOGY (BLOCKCHAIN VISUAL) -->
+    <div class="tech-panel">
+        <div class="panel-header">
+            <span>🔗 NETWORK NODES</span>
+            <span class="live-badge" style="background:rgba(0,170,255,0.1); color:#00aaff; border-color:rgba(0,170,255,0.2)">SYNC</span>
+        </div>
+        <div class="network-container">
+             <canvas id="networkCanvas"></canvas>
+        </div>
+        <div class="network-stats">
+            <div>
+                <span class="label">ACTIVE NODES</span>
+                <span class="val">14,205</span>
+            </div>
+             <div style="text-align:right;">
+                <span class="label">GLOBAL HASH</span>
+                <span class="val">45.2 TH/s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MINING RIG STATUS CARDS -->
+    <div class="mining-rigs-area">
+        <div class="rig-card">
+            <div class="rig-icon">💾</div>
+            <div class="rig-status">SERVER</div>
+        </div>
+         <div class="rig-card">
+            <div class="rig-icon">⚡</div>
+            <div class="rig-status">POWER</div>
+        </div>
+         <div class="rig-card">
+            <div class="rig-icon">⛏️</div>
+            <div class="rig-status">MINING</div>
+        </div>
+    </div>
+
+    <!-- Referral Button -->
+    <button class="refer-btn-main" onclick="show('referralPage')">
+        👥 OPEN REFERRAL NETWORK
+    </button>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="page">
+    <button class="back-btn" onclick="show('page2')">←</button>
+    <h1>HISTORY</h1>
+    <div class="glass-box" style="padding: 40px 20px; margin-top: 30px; width: 100%;">
+        <div style="font-size: 50px; margin-bottom: 10px; opacity:0.3">📭</div>
+        <h3 style="color: #555;">NO TRANSACTIONS</h3>
+    </div>
+</div>
+
+<!-- WITHDRAW PAGE -->
+<div id="withdrawPage" class="page">
+    <button class="back-btn" onclick="show('page2')">←</button>
+    <h1>WITHDRAW</h1>
+    <div class="wallet-card" style="margin-bottom: 20px;">
+        <span class="wallet-title">WITHDRAWABLE</span>
+        <span class="wallet-amount">0.00 ৳</span>
+    </div>
+    <div class="pay-grid">
+        <div class="pay-option pay-bkash" onclick="selectWithdrawMethod(this)">
+            <span style="font-size:24px; font-weight:bold; color:#e2136e">bKash</span>
+        </div>
+        <div class="pay-option pay-nagad" onclick="selectWithdrawMethod(this)">
+            <span style="font-size:24px; font-weight:bold; color:#f6921e">Nagad</span>
+        </div>
+    </div>
+    <input type="number" id="withdrawAmount" class="modal-input" placeholder="AMOUNT">
+    <button class="modal-btn" style="margin-top:10px" onclick="submitWithdraw()">CONFIRM REQUEST</button>
+</div>
+
+<!-- WITHDRAW FAIL PAGE -->
+<div id="withdrawFailPage" class="page">
+    <button class="back-btn" onclick="show('withdrawPage')">←</button>
+    <h1 style="color: #ff3333">ERROR</h1>
+    <div class="glass-box" style="padding:40px 20px; margin-top:30px; border: 1px solid rgba(255, 51, 51, 0.3);">
+        <div style="font-size: 60px; margin-bottom: 15px;">📉</div>
+        <h2 style="margin-bottom: 5px; color: #ff3333; font-size: 18px;">INSUFFICIENT FUNDS</h2>
+        <p style="color: #666; font-size: 12px;">Please recharge your account.</p>
+    </div>
+</div>
+
+<!-- REFERRAL PAGE -->
+<div id="referralPage" class="page">
+    <button class="back-btn" onclick="show('page2')">←</button>
+    <h1>NETWORK</h1>
+    <h2 style="color:#666;">6 TIER COMMISSION STRUCTURE</h2>
+
+    <div class="level-list">
+        <div class="level-card lv-1">
+            <div class="lv-info"><h3 style="color:#FFD700">GEN 1</h3><span>Direct</span></div>
+            <div class="lv-percent" style="color:#FFD700">10%</div>
+        </div>
+        <div class="level-card lv-2">
+            <div class="lv-info"><h3 style="color:#C0C0C0">GEN 2</h3><span>Indirect</span></div>
+            <div class="lv-percent" style="color:#C0C0C0">5%</div>
+        </div>
+        <div class="level-card lv-3">
+            <div class="lv-info"><h3 style="color:#CD7F32">GEN 3</h3><span>Network</span></div>
+            <div class="lv-percent" style="color:#CD7F32">3%</div>
+        </div>
+        <div class="level-card lv-4">
+            <div class="lv-info"><h3 style="color:#00ffcc">GEN 4</h3><span>Network</span></div>
+            <div class="lv-percent" style="color:#00ffcc">2%</div>
+        </div>
+        <div class="level-card lv-5">
+            <div class="lv-info"><h3 style="color:#00aaff">GEN 5</h3><span>Network</span></div>
+            <div class="lv-percent" style="color:#00aaff">1%</div>
+        </div>
+        <div class="level-card lv-6">
+            <div class="lv-info"><h3 style="color:#ff00cc">GEN 6</h3><span>Network</span></div>
+            <div class="lv-percent" style="color:#ff00cc">0.5%</div>
+        </div>
+    </div>
+</div>
+
+<!-- PACKAGES PAGE -->
+<div id="page3" class="page">
+    <button class="back-btn" onclick="show('page2')">←</button>
+    <h1>PLANS</h1>
+    <h2 style="margin-bottom:15px">CHOOSE MINING POWER</h2>
+
+    <div class="pkg-grid">
+        <div class="pkg-card">
+            <div class="pkg-header"><div style="font-size:24px">🥉</div><div class="pkg-price">300 ৳</div></div>
+            <div class="pkg-details">
+                <div class="detail-item">PROFIT<div class="detail-val">60 ৳</div></div>
+                <div class="detail-item">CYCLE<div class="detail-val">30 Days</div></div>
+            </div>
+            <button class="pkg-btn" onclick="openPay()">ACTIVATE</button>
+        </div>
+        <div class="pkg-card" style="border-color: #00aaff;">
+            <div class="pkg-header"><div style="font-size:24px">🥈</div><div class="pkg-price" style="color:#00aaff">500 ৳</div></div>
+            <div class="pkg-details">
+                <div class="detail-item">PROFIT<div class="detail-val">100 ৳</div></div>
+                <div class="detail-item">CYCLE<div class="detail-val">30 Days</div></div>
+            </div>
+            <button class="pkg-btn" style="background:#00aaff; color:white;" onclick="openPay()">ACTIVATE</button>
+        </div>
+        <div class="pkg-card" style="border-color: #ff00cc;">
+            <div class="pkg-header"><div style="font-size:24px">🥇</div><div class="pkg-price" style="color:#ff00cc">1000 ৳</div></div>
+            <div class="pkg-details">
+                <div class="detail-item">PROFIT<div class="detail-val">200 ৳</div></div>
+                <div class="detail-item">CYCLE<div class="detail-val">30 Days</div></div>
+            </div>
+            <button class="pkg-btn" style="background:#ff00cc; color:white;" onclick="openPay()">ACTIVATE</button>
+        </div>
+         <div class="pkg-card" style="border-color: #ffd700;">
+            <div class="pkg-header"><div style="font-size:24px">🏆</div><div class="pkg-price" style="color:#ffd700">2000 ৳</div></div>
+            <div class="pkg-details">
+                <div class="detail-item">PROFIT<div class="detail-val">400 ৳</div></div>
+                <div class="detail-item">CYCLE<div class="detail-val">30 Days</div></div>
+            </div>
+            <button class="pkg-btn" style="background:#ffd700; color:black;" onclick="openPay()">ACTIVATE</button>
+        </div>
+         <div class="pkg-card" style="border-color: #ff4500;">
+           <div class="pkg-header"><div style="font-size:24px">🚀</div><div class="pkg-price" style="color:#ff4500">5000 ৳</div></div>
+           <div class="pkg-details">
+               <div class="detail-item">PROFIT<div class="detail-val">1000 ৳</div></div>
+               <div class="detail-item">CYCLE<div class="detail-val">30 Days</div></div>
+           </div>
+           <button class="pkg-btn" style="background:#ff4500; color:white;" onclick="openPay()">ACTIVATE</button>
+       </div>
+    </div>
+</div>
+
+<!-- PAYMENT METHOD -->
+<div id="payPage" class="page">
+    <button class="back-btn" onclick="show('page3')">←</button>
+    <h1>DEPOSIT</h1>
+    <div class="pay-grid">
+        <div class="pay-option pay-bkash" onclick="selectPay(this)">
+            <span style="font-size:24px; font-weight:bold; color:#e2136e">bKash</span>
+        </div>
+        <div class="pay-option pay-nagad" onclick="selectPay(this)">
+            <span style="font-size:24px; font-weight:bold; color:#f6921e">Nagad</span>
+        </div>
+    </div>
+    <button class="modal-btn" onclick="show('copyPage')">PROCEED</button>
+</div>
+
+<!-- COPY PAGE -->
+<div id="copyPage" class="page">
+    <button class="back-btn" onclick="show('payPage')">←</button>
+    <h1>TRANSFER</h1>
+    <p style="margin-bottom:20px; color:#666; font-size:12px">Send money to the number below</p>
+
+    <div class="glass-box" style="width:100%; padding:15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <span id="num" style="font-family:'Rajdhani'; font-size:22px; color:#00ffcc; letter-spacing:1px;">01810967817</span>
+        <button onclick="copyText()" style="background:#222; border:1px solid #444; color:white; padding:5px 10px; border-radius:4px; font-size:10px;">COPY</button>
+    </div>
+
+    <input class="modal-input" id="trxid" type="text" placeholder="TRANSACTION ID">
+    <button class="modal-btn" style="margin-top:20px; background: linear-gradient(45deg, #00ff88, #00b7ff);" onclick="submitTrx()">VERIFY</button>
+</div>
+
+<!-- FAIL PAGE (General) -->
+<div id="failPage" class="page">
+    <button class="back-btn" onclick="show('copyPage')">←</button>
+    <h1 style="color:red;">FAILED</h1>
+    <div class="glass-box" style="padding:30px; margin-top:20px; border:1px solid rgba(255,0,0,0.2)">
+        <h2 style="color:white; font-size:16px;">VERIFICATION FAILED</h2>
+        <p style="margin-top:5px; color:#666; font-size:12px">Invalid Transaction ID.</p>
+    </div>
+</div>
+
+<script>
+/* NAVIGATION */
+function goPage2(){ show("page2"); startDashboardAnimations(); }
+function goPage3(){ show("page3"); }
+function openPay(){ show("payPage"); }
+function goHistory(){ show("historyPage"); }
+function goWithdraw(){ show("withdrawPage"); }
+function openSupport(){ window.location.href = "https://t.me/your_telegram_group"; }
+
+function show(id){
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    const activePage = document.getElementById(id);
+    activePage.classList.add("active");
+    activePage.style.animation = 'none';
+    activePage.offsetHeight; 
+    activePage.style.animation = 'fadeIn 0.4s ease-in-out';
+    window.scrollTo(0,0);
+}
+
+/* LOGIN */
+function openLogin(){
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('loginNumber').value = '';
+    document.getElementById('errorMsg').style.display = 'none';
+}
+function closeModal(){ document.getElementById('loginModal').style.display = 'none'; }
+function validateLogin(){
+    const num = document.getElementById('loginNumber').value;
+    if(num.length === 11){ closeModal(); goPage2(); } else { document.getElementById('errorMsg').style.display = 'block'; }
+}
+
+/* PAY & WITHDRAW */
+let selectedWithdrawMethod = null;
+function selectPay(btn){
+    document.querySelectorAll(".pay-option").forEach(b=>b.classList.remove("selected"));
+    btn.classList.add("selected");
+}
+function selectWithdrawMethod(btn){
+    document.querySelectorAll("#withdrawPage .pay-option").forEach(b=>b.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedWithdrawMethod = btn.innerText;
+}
+function copyText(){
+    let text = document.getElementById("num").innerText;
+    navigator.clipboard.writeText(text).then(()=>{alert("COPIED")},()=>{
+        let t=document.createElement("textarea");t.value=text;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);alert("COPIED");
+    });
+}
+function submitTrx(){
+    if(!document.getElementById('trxid').value.trim()){alert("ENTER TRX ID");return;}
+    show("failPage");
+}
+function submitWithdraw(){
+    if(!selectedWithdrawMethod){alert("SELECT METHOD");return;}
+    if(!document.getElementById('withdrawAmount').value){alert("ENTER AMOUNT");return;}
+    show("withdrawFailPage");
+}
+
+/* DASHBOARD ANIMATIONS START */
+let miningInterval, networkInterval;
+function startDashboardAnimations() {
+    setTimeout(startMiningGraph, 100);
+    setTimeout(startNetworkVis, 100);
+}
+
+/* 1. MARKET GRAPH ANIMATION */
+function startMiningGraph() {
+    const cvs = document.getElementById("miningCanvas");
+    if(!cvs) return;
+    const ctx = cvs.getContext("2d");
+    let w = cvs.width = cvs.offsetWidth;
+    let h = cvs.height = cvs.offsetHeight;
+    let points = [], num = 40;
+    for(let i=0; i<num; i++) points.push(h/2);
+
+    function draw() {
+        points.shift();
+        let last = points[points.length-1];
+        let next = last + (Math.random()*16 - 8);
+        if(next<5) next=5; if(next>h-5) next=h-5;
+        points.push(next);
+
+        ctx.clearRect(0,0,w,h);
+        
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for(let i=0; i<num; i++){ ctx.lineTo((i/(num-1))*w, points[i]); }
+        ctx.lineTo(w, h);
+        let grad = ctx.createLinearGradient(0,0,0,h);
+        grad.addColorStop(0, "rgba(0, 255, 204, 0.2)");
+        grad.addColorStop(1, "rgba(0, 255, 204, 0)");
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.beginPath();
+        for(let i=0; i<num; i++){ let x=(i/(num-1))*w; i===0?ctx.moveTo(x,points[i]):ctx.lineTo(x,points[i]); }
+        ctx.strokeStyle = "#00ffcc"; ctx.lineWidth=2; ctx.stroke();
+        
+        miningInterval = requestAnimationFrame(draw);
+    }
+    cancelAnimationFrame(miningInterval);
+    draw();
+}
+
+/* 2. BLOCKCHAIN NETWORK VISUALIZATION */
+function startNetworkVis() {
+    const cvs = document.getElementById("networkCanvas");
+    if(!cvs) return;
+    const ctx = cvs.getContext("2d");
+    let w = cvs.width = cvs.offsetWidth;
+    let h = cvs.height = cvs.offsetHeight;
+    
+    // Nodes
+    let nodes = [];
+    for(let i=0; i<20; i++){
+        nodes.push({x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5});
+    }
+
+    function draw() {
+        ctx.fillStyle = "rgba(0,0,0,0.1)"; // Trails
+        ctx.fillRect(0,0,w,h);
+        
+        ctx.strokeStyle = "rgba(0, 170, 255, 0.3)";
+        ctx.fillStyle = "#00aaff";
+        
+        // Update & Draw Nodes
+        nodes.forEach((n, i) => {
+            n.x += n.vx; n.y += n.vy;
+            if(n.x < 0 || n.x > w) n.vx *= -1;
+            if(n.y < 0 || n.y > h) n.vy *= -1;
+            
+            ctx.beginPath(); ctx.arc(n.x, n.y, 2, 0, Math.PI*2); ctx.fill();
+            
+            // Connect
+            nodes.forEach((n2, j) => {
+                if(i !== j) {
+                    let dx = n.x - n2.x; let dy = n.y - n2.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 60) {
+                        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+                    }
+                }
+            });
+        });
+        
+        // Random "Transaction" Pulse
+        if(Math.random() > 0.95) {
+             let n = nodes[Math.floor(Math.random()*nodes.length)];
+             ctx.beginPath(); ctx.arc(n.x, n.y, 8, 0, Math.PI*2); 
+             ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.fill();
+        }
+
+        networkInterval = requestAnimationFrame(draw);
+    }
+    cancelAnimationFrame(networkInterval);
+    draw();
+}
+
+/* GLOBAL BACKGROUND */
+const bgCvs=document.getElementById("bg"), bgCtx=bgCvs.getContext("2d");
+function resizeBg(){bgCvs.width=innerWidth;bgCvs.height=innerHeight;}
+resizeBg(); addEventListener("resize",resizeBg);
+const bgDots=[];
+for(let i=0;i<60;i++){ bgDots.push({x:Math.random()*bgCvs.width, y:Math.random()*bgCvs.height, vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5}); }
+function drawBg(){
+    bgCtx.clearRect(0,0,bgCvs.width,bgCvs.height);
+    bgCtx.fillStyle="rgba(0, 255, 204, 0.5)";
+    bgCtx.strokeStyle="rgba(0, 255, 204, 0.1)";
+    bgDots.forEach(d=>{
+        d.x+=d.vx;d.y+=d.vy;
+        if(d.x<0||d.x>bgCvs.width)d.vx*=-1;
+        if(d.y<0||d.y>bgCvs.height)d.vy*=-1;
+        bgCtx.beginPath();bgCtx.arc(d.x,d.y,1.5,0,Math.PI*2);bgCtx.fill();
+        bgDots.forEach(d2=>{
+            let dx=d.x-d2.x, dy=d.y-d2.y, dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<100){bgCtx.beginPath();bgCtx.moveTo(d.x,d.y);bgCtx.lineTo(d2.x,d2.y);bgCtx.stroke();}
+        });
+    });
+    requestAnimationFrame(drawBg);
+}
+drawBg();
+</script>
+
+</body>
+  </html>
